@@ -1,0 +1,2 @@
+class FunctionReplicaCreationException(Exception):
+    pass
