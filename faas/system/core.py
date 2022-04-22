@@ -329,19 +329,19 @@ class FaasSystem(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def scale_down(self, function_name: str, remove: Union[int, List[FunctionReplica]]):
+    def scale_down(self, function_name: str, remove: Union[int, List[FunctionReplica]]) -> List[FunctionReplica]:
         """
         Scales down the specified function.
         Depending on argument of remove, either chooses the last 'n' replica that were started or
         shuts down the specific replicas passed.
         :param function_name:  the function to scale down
         :param remove: either a number of FunctionReplica to shut down or a specific list of replicas
-        :return:
+        :return: list containing the removed replica
         """
         ...
 
     @abc.abstractmethod
-    def scale_up(self, function_name: str, replicas: Union[int, List[FunctionReplica]]):
+    def scale_up(self, function_name: str, replicas: Union[int, List[FunctionReplica]]) -> List[FunctionReplica]:
         """
         Scales up the specified function.
         Either creates the given number of replica or uses the list of passed replicas (i.e., the node is None in each replica,
@@ -349,6 +349,7 @@ class FaasSystem(abc.ABC):
         :param function_name:  the function to scale up
         :param remove: either a number of FunctionReplica to start or a specific list of replicas (which
                        need to be mapped to specific nodes)
+        :return: list containing the added replica
         """
         ...
 
