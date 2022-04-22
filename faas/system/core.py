@@ -354,7 +354,7 @@ class FaasSystem(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def discover(self, function: FunctionContainer, state=None) -> List[FunctionReplica]:
+    def discover(self, function: FunctionContainer, state: FunctionReplicaState = None) -> List[FunctionReplica]:
         """
         Finds for a specific FunctionContainer all replicas. I.e., all replica that have the same image as the given
         FunctionContainer.
