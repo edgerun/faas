@@ -319,11 +319,12 @@ class FaasSystem(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def get_replicas(self, fn_name: str, state=None) -> List[FunctionReplica]:
+    def get_replicas(self, fn_name: str, runnning: bool = True, state=None) -> List[FunctionReplica]:
         """
         Finds all FunctionReplicas for the given function that are in the given state.
         If the state is None all replica are returned
         :param fn_name: the function name
+        :param running: set to true if only RUNNING replicas should be returned or all that are not RUNNING
         :param state: optional, the state the function replicas are in or all if None
         """
         ...
@@ -354,13 +355,15 @@ class FaasSystem(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def discover(self, function: FunctionContainer, state: FunctionReplicaState = None) -> List[FunctionReplica]:
+    def discover(self, function: FunctionContainer, running: bool = True, state: FunctionReplicaState = None) -> List[
+        FunctionReplica]:
         """
         Finds for a specific FunctionContainer all replicas. I.e., all replica that have the same image as the given
         FunctionContainer.
         If the state is None, returns all replicas.
         :param function:  container to look for FunctionReplica in the given state
-        :param state: optional, the replica state
+        :param running: set to true if only RUNNING replicas should be returned or all that are not RUNNING
+        :param state: optional, if replicas should be in a specific state
         :return: a list of replicas in the given state, or if None all
         """
         ...
