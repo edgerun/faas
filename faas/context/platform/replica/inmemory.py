@@ -33,8 +33,9 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
             replicas = list(self._replicas.values())
             return replicas
 
-    def find_by_predicate(self, predicate: Callable[[I], bool], running: bool, state: FunctionReplicaState) -> \
-            Optional[I]:
+    def find_by_predicate(self, predicate: Callable[[I], bool], running: bool = True,
+                          state: FunctionReplicaState = None) -> \
+            List[I]:
         found = None
         with self.rw_lock.lock.gen_rlock():
             replicas = self.get_function_replicas()

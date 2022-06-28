@@ -9,8 +9,9 @@ D = TypeVar('D', bound=FunctionDeployment)
 
 class FunctionReplicaService(abc.ABC, Generic[I]):
 
-    def find_by_predicate(self, predicate: Callable[[I], bool], running: bool, state: FunctionReplicaState) -> \
-            Optional[I]:
+    def find_by_predicate(self, predicate: Callable[[I], bool], running: bool = True,
+                          state: FunctionReplicaState = None) -> \
+            List[I]:
         ...
 
     def get_function_replicas(self) -> List[I]:
