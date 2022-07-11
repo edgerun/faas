@@ -2,12 +2,12 @@ import logging
 from typing import Dict, List, Optional, TypeVar, Callable, Union
 
 from faas.util.rwlock import ReadWriteLock
-from ... import FunctionDeploymentService
 
 logger = logging.getLogger(__name__)
 
 from faas.system import FunctionReplicaState, FunctionReplica, FunctionDeployment
 from faas.context.platform.node.api import NodeService
+from faas.context.platform.deployment.api import FunctionDeploymentService
 from .api import FunctionReplicaService, FunctionReplicaFactory
 
 I = TypeVar('I', bound=FunctionReplica)
@@ -20,7 +20,7 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
     """
 
     def __init__(self, node_service: NodeService, deployment_service: FunctionDeploymentService[D],
-                 replica_factory: FunctionReplicaFactory[I]):
+                 replica_factory: FunctionReplicaFactory[D, I]):
         super().__init__()
         self.node_service = node_service
         self.deployment_service = deployment_service
