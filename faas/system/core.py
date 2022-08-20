@@ -122,7 +122,8 @@ class FunctionRequest:
     name: str
     body: str
     start: float
-    size: float = None
+    # in bytes
+    size: int = None
 
     id_generator = counter()
 
@@ -141,6 +142,9 @@ class FunctionRequest:
     def __repr__(self):
         return self.__str__()
 
+    def __hash__(self) -> int:
+        return hash(self.start) + hash(self.name) + hash(self.request_id)
+
 
 @dataclass
 class FunctionResponse(NamedTuple):
@@ -153,6 +157,7 @@ class FunctionResponse(NamedTuple):
     t_wait: Optional[float]
     t_exec: Optional[float]
     node: Optional[str]
+    size: Optional[float]
 
 
 @dataclass
@@ -319,7 +324,7 @@ class FaasSystem(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def get_replicas(self, fn_name: str, runnning: bool = True, state=None) -> List[FunctionReplica]:
+    def get_replicas(self, fn_name: str, running: bool = True, state=None) -> List[FunctionReplica]:
         """
         Finds all FunctionReplicas for the given function that are in the given state.
         If the state is None all replica are returned
