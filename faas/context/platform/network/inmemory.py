@@ -15,12 +15,13 @@ class InMemoryNetworkService(NetworkService):
         self.rw_lock = ReadWriteLock()
 
     def get_latency(self, from_node: str, to_node: str) -> float:
-        latency = self.latency_map.get((from_node, to_node), None)
-        if latency is None:
-            latency = self.latency_map.get((to_node, from_node), None)
+        with self.rw_lock.lock.gen_rlock():
+            latency = self.latency_map.get((from_node, to_node), None)
             if latency is None:
-                raise ValueError(f'No latency for connection: {from_node} - {to_node}')
-        return latency
+                latency = self.latency_map.get((to_node, from_node), None)
+                if latency is None:
+                    raise ValueError(f'No latency for connection: {from_node} - {to_node}')
+            return latency
 
     def get_max_latency(self) -> float:
         return self.max_latency
