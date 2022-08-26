@@ -27,16 +27,19 @@ class InMemoryDeploymentService(FunctionDeploymentService[I]):
 
     def exists(self, fn_name: str) -> bool:
         with self.rw_lock.lock.gen_rlock():
-            return self._deployments.get(fn_name, None) is not None
+            return self._exists(fn_name)
+
+    def _exists(self, fn_name: str) -> bool:
+        return self._deployments.get(fn_name, None) is not None
 
     def remove(self, function_name: str):
         with self.rw_lock.lock.gen_wlock():
-            if self.exists(function_name):
+            if self._exists(function_name):
                 self.deployments = [x for x in self.deployments if x.name != function_name]
                 del self._deployments[function_name]
 
     def add(self, deployment: I):
         with self.rw_lock.lock.gen_wlock():
-            if not self.exists(deployment.name):
+            if not self._exists(deployment.name):
                 self.deployments.append(deployment)
                 self._deployments[deployment.name] = deployment
