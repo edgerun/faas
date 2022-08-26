@@ -5,6 +5,7 @@ api_gateway_type_label = 'api-gateway'
 function_type_label = 'fn'
 client_role_label = 'node-role.kubernetes.io/client'
 worker_role_label = 'node-role.kubernetes.io/worker'
+controller_role_label = 'node-role.kubernetes.io/controller'
 hostname_label = 'kubernetes.io/hostname'
 
 # Pod status constants
