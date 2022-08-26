@@ -115,63 +115,28 @@ class FunctionContainer:
         return self.resource_config.get_resource_requirements()
 
 
-@dataclass
-class FunctionRequest:
-    request_id: int
-    client: str
-    name: str
-    body: str
-    start: float
-    # in bytes
-    size: int = None
-
-    id_generator = counter()
-
-    def __init__(self, name, start: float, size=None, request_id=None, body=None, client=None) -> None:
-        super().__init__()
-        self.start = start
-        self.name = name
-        self.body = body
-        self.client = client
-        self.size = size
-        self.request_id = next(self.id_generator)
-
-    def __str__(self) -> str:
-        return 'FunctionRequest(%d, %s, %s)' % (self.request_id, self.name, self.size)
-
-    def __repr__(self):
-        return self.__str__()
-
-    def __hash__(self) -> int:
-        return hash(self.start) + hash(self.name) + hash(self.request_id)
-
-
-@dataclass
-class FunctionResponse(NamedTuple):
-    request: FunctionRequest
-    request_id: int
-    client: str
-    name: str
-    body: str
-    code: int
-    t_wait: Optional[float]
-    t_exec: Optional[float]
-    node: Optional[str]
-    size: Optional[float]
-
-
-@dataclass
 class FunctionNode:
     name: str
     arch: str
     cpus: int
     ram: int
-    netspeed: str
+    netspeed: int
     labels: Dict[str, str]
-    zone: Optional[str]
     allocatable: Dict[str, str]
     cluster: Optional[str]
     state: NodeState
+
+    def __init__(self, name: str, arch: str, cpus: int, ram: int, netspeed: int, labels: Dict[str, str],
+                 allocatable: Dict[str, str], cluster: Optional[str], state: NodeState):
+        self.name = name
+        self.arch = arch
+        self.cpus = cpus
+        self.ram = ram
+        self.netspeed = netspeed
+        self.labels: Dict[str, str] = labels
+        self.allocatable = allocatable
+        self.cluster = cluster
+        self.state = state
 
 
 class DeploymentRanking:
@@ -267,7 +232,77 @@ class FunctionReplica:
     @property
     def labels(self):
         # own labels have highest priority (i.e., _labels will overwrite (function.labels | container.labels)
-        return self.function.labels | self.container.labels | self._labels
+        labels = self.function.labels.copy()
+        labels.update(self.container.labels)
+        labels.update(self._labels)
+        return labels
+
+
+@dataclass
+class FunctionRequest:
+    request_id: int
+    client: str
+    name: str
+    body: str
+    start: float
+    # in bytes
+    size: int = None
+    replica: FunctionReplica = None
+    headers: Dict = None
+
+    id_generator = counter()
+
+    def __init__(self, name, start: float, size=None, request_id=None, body=None, client=None, replica=None,
+                 headers=None) -> None:
+        super().__init__()
+        self.start = start
+        self.name = name
+        self.body = body
+        self.client = client
+        self.size = size
+        self.request_id = request_id if request_id is not None else next(self.id_generator)
+        self.replica = replica
+        self.headers = headers
+
+    def __str__(self) -> str:
+        return 'FunctionRequest(%d, %s, %s)' % (self.request_id, self.name, self.size)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __hash__(self) -> int:
+        return hash(self.start) + hash(self.name) + hash(self.request_id)
+
+
+@dataclass
+class FunctionResponse:
+    request: FunctionRequest
+    request_id: int
+    # client that has called
+    client: str
+    # function name
+    name: str
+    # response body
+    body: str
+    # size of the response
+    size: int
+    # response status code
+    code: int
+    # timestamp that is taken before any data transfer or execution happened
+    # (ts_end - ts_start) -> is the true round trip time of the request, including every latency
+    ts_start: float
+    # timestamp of waiting to be executed
+    ts_wait: float
+    # timestamp of starting execution
+    ts_exec: float
+    # timestamp of ending execution
+    ts_end: float
+    # raw function execution time, without wait
+    fet: float
+    # replica which the request was processed
+    replica: FunctionReplica
+    # node on which the request was processed
+    node: FunctionNode
 
 
 class LoadBalancer:
