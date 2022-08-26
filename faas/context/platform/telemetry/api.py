@@ -16,5 +16,6 @@ class TelemetryService(abc.ABC):
         """
         raise NotImplementedError()
 
-    def get_node_cpu(self, node: str) -> Optional[pd.DataFrame]:
+    def get_node_cpu(self, node: str, start: datetime.datetime = None, end: datetime.datetime = None) -> Optional[
+        pd.DataFrame]:
         raise NotImplementedError()
