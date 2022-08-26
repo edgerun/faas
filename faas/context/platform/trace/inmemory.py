@@ -18,6 +18,7 @@ I = TypeVar('I', bound=FunctionResponse)
 
 @dataclass
 class ResponseRepresentation:
+    request_id: int
     ts: float
     function: str
     function_image: str
@@ -30,7 +31,6 @@ class ResponseRepresentation:
     dest_zone: str
     client: str
     status: int
-    network_latency: float
 
 
 class InMemoryTraceService(TraceService[I]):
@@ -64,7 +64,9 @@ class InMemoryTraceService(TraceService[I]):
                     continue
 
                 for req in node_requests.value():
-                    self.parser(req.val)
+                    if parsed is not None:
+                        for key, value in parsed.__dict__.items():
+                            requests[key].append(value)
         df = pd.DataFrame(data=requests).sort_values(by='ts')
         df.index = pd.DatetimeIndex(pd.to_datetime(df['ts'], unit='s'))
 
@@ -77,8 +79,8 @@ class InMemoryTraceService(TraceService[I]):
         return df
 
     def add_trace(self, response: I):
-        with self.locks[response.node].lock.gen_wlock():
-            node = response.node
+        with self.locks[response.node.name].lock.gen_wlock():
+            node = response.node.name
             window = self.requests_per_node.get(node, None)
             if window is None:
                 self.requests_per_node[node] = PointWindow(self.window_size)
@@ -118,7 +120,7 @@ class InMemoryTraceService(TraceService[I]):
         if response_status is not None:
             df = df[df['status'] == response_status]
             logger.info(f'AFter filtering out non status: {len(df)}')
-        return df
+        return df.reset_index(drop=True)
 
     def get_traces_for_function_image(self, function: str, function_image: str, start: float, end: float,
                                       zone: str = None,
