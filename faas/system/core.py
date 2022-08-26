@@ -2,7 +2,7 @@ import abc
 import enum
 from dataclasses import dataclass
 from typing import List, Dict, Union
-from typing import Optional, NamedTuple
+from typing import Optional
 
 
 class WorkloadConfiguration(abc.ABC):
@@ -277,7 +277,7 @@ class FunctionRequest:
 @dataclass
 class FunctionResponse:
     request: FunctionRequest
-    request_id: int
+    request_id: Union[int, str]
     # client that has called
     client: str
     # function name
