@@ -1,7 +1,7 @@
 import abc
 import enum
 from dataclasses import dataclass
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Any
 from typing import Optional
 
 
@@ -53,7 +53,11 @@ class FunctionImage:
         self.image = image
 
 
-class ResourceConfiguration(abc.ABC):
+class ResourceConfiguration():
+
+    def __init__(self, requirements: Dict[str, Any], limits: Dict[str, Any] = None):
+        self.requirements = requirements
+        self.limits = limits
 
     def get_resource_requirements(self) -> Dict:
         """
@@ -61,14 +65,14 @@ class ResourceConfiguration(abc.ABC):
         Has to be always defined and a default value must be provided.
         :return: resource requirements for scheduling
         """
-        ...
+        return self.requirements
 
     def get_resource_limits(self) -> Optional[Dict]:
         """
         Returns the upper limit of resource usage. Is optional and therefore can be None
         :return: an optional dict that contains upper limits for resource usage
         """
-        ...
+        return self.limits
 
     def __str__(self):
         return str(self.get_resource_requirements())
@@ -139,6 +143,7 @@ class FunctionNode:
         self.state = state
 
 
+@dataclass
 class DeploymentRanking:
     """
     The DeploymentRanking is used to determine at any time which DeploymentRanking to deploy for the associated
@@ -147,9 +152,15 @@ class DeploymentRanking:
     for a Function (FunctionDeployment).
     """
     containers: List[FunctionContainer]
+    function_factor: Dict[str, float]
 
-    def __init__(self, containers: List[FunctionContainer]):
+    def __init__(self, containers: List[FunctionContainer], function_factor: Dict[str, float] = None):
         self.containers = containers.copy()
+        self.function_factor = function_factor
+        if self.function_factor is None:
+            self.function_factor = {}
+            for container in self.containers:
+                self.function_factor[container.image] = 1
 
     def set_first(self, container: FunctionContainer):
         """
@@ -237,6 +248,8 @@ class FunctionReplica:
         labels.update(self._labels)
         return labels
 
+
+# TODO add functionrequest to trace when started
 
 @dataclass
 class FunctionRequest:
