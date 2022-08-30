@@ -1,5 +1,5 @@
 zone_label = "ether.edgerun.io/zone"
-pod_type_label = "type"
+pod_type_label = "ether.edgerun.io/type"
 function_label = "ether.edgerun.io/function"
 api_gateway_type_label = 'api-gateway'
 function_type_label = 'fn'
