@@ -7,7 +7,7 @@ import pandas as pd
 
 class TelemetryService(abc.ABC):
 
-    def get_replica_cpu(self, fn_replica_id: str, start: datetime.datetime = None, end: datetime.datetime = None) -> \
+    def get_replica_cpu(self, fn_replica_id: str, start: float = None, end: float = None) -> \
             Optional[pd.DataFrame]:
         """
         Fetch the measured cpu times for the given replica in the given timeframe.
@@ -16,6 +16,6 @@ class TelemetryService(abc.ABC):
         """
         raise NotImplementedError()
 
-    def get_node_cpu(self, node: str, start: datetime.datetime = None, end: datetime.datetime = None) -> Optional[
+    def get_node_cpu(self, node: str, start: float = None, end: float = None) -> Optional[
         pd.DataFrame]:
         raise NotImplementedError()

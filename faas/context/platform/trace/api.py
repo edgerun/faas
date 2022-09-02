@@ -53,8 +53,8 @@ class TraceService(abc.ABC, Generic[I]):
             'client
 
         :param function: the function to fetch functions calls from
-        :param start: unix timestamp in seconds
-        :param end: unix timestamp in seconds
+        :param start: float
+        :param end: float
         :param zone: optional, includes only traces that were processed in the given zone (i.e., the executing node was in the zone)
         :param response_status: optional, if None returns all responses otherwise checks for status code
         :return: DataFrame containing the traces
