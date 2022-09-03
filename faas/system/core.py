@@ -318,10 +318,6 @@ class FunctionResponse:
     node: FunctionNode
 
 
-class LoadBalancer:
-
-    def next_replica(self, request: FunctionRequest) -> FunctionReplica:
-        raise NotImplementedError
 
 
 class FaasSystem(abc.ABC):
