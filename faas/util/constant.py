@@ -15,3 +15,10 @@ pod_unknown = "Unknown"
 pod_failed = "Failed"
 pod_succeeded = "Succeeded"
 pod_pending = "Pending"
+
+# Observer events
+function_replica_add = 'function-replica-add'
+function_replica_delete = 'function-replica-delete'
+function_replica_scale_up = 'function-replica-scale-up'
+function_replica_scale_down = 'function-replica-scale-down'
+function_replica_state_change = 'function-replica-state-change'

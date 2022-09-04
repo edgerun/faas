@@ -1,6 +1,7 @@
 import abc
 from typing import List, Optional, Dict, Callable, Generic, TypeVar, Union
 
+from ...observer.api import Observer
 from ....system.core import FunctionReplica, FunctionReplicaState, FunctionContainer, FunctionDeployment
 
 I = TypeVar('I', bound=FunctionReplica)
@@ -47,6 +48,10 @@ class FunctionReplicaService(abc.ABC, Generic[I]):
     def scale_down(self, function_name: str, remove: Union[int, List[I]]) -> List[I]: ...
 
     def scale_up(self, function_name: str, add: Union[int, List[I]]) -> List[I]: ...
+
+    def register(self, observer: Observer): ...
+
+    def set_state(self, replica: FunctionReplica, state: FunctionReplicaState): ...
 
 
 class FunctionReplicaFactory(abc.ABC, Generic[D, I]):

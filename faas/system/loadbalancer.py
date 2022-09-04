@@ -1,12 +1,13 @@
-from typing import List
+from typing import List, Any
 
 from faas.context import PlatformContext
-from faas.system import FunctionDeployment, FunctionReplica
-from faas.util.constant import function_label, api_gateway_type_label, zone_label
+from faas.context.observer.api import Observer
+from faas.system import FunctionDeployment, FunctionReplica, FunctionReplicaState
+from faas.util.constant import function_label, api_gateway_type_label, zone_label, function_replica_add, \
+    function_replica_delete, function_replica_scale_up, function_replica_scale_down, function_replica_state_change
 
 
-class LoadBalancer:
-
+class LoadBalancerOptimizer:
     def update(self): ...
 
     def get_running_replicas(self, function: str) -> List[FunctionReplica]: ...
@@ -15,12 +16,19 @@ class LoadBalancer:
 
     def add_replica(self, replica: FunctionReplica): ...
 
-    def remove_replica(self, replica: FunctionReplica): ...
+    def remove_replica(self, replica_id: str): ...
 
-class GlobalLoadBalancer(LoadBalancer):
+    def add_replicas(self, replicas: List[FunctionReplica]): ...
+
+    def remove_replicas(self, replicas: List[FunctionReplica]): ...
+
+
+class GlobalLoadBalancerOptimizer(LoadBalancerOptimizer):
 
     def __init__(self, context: PlatformContext):
         self.context = context
+        self.observer = LoadBalancerObserver(self)
+        context.replica_service.register(self.observer)
 
     def get_running_replicas(self, function: str) -> List[FunctionReplica]:
         replica_service = self.context.replica_service
@@ -33,11 +41,37 @@ class GlobalLoadBalancer(LoadBalancer):
         return functions
 
 
-class LocalizedLoadBalancer(LoadBalancer):
+class LoadBalancerObserver(Observer):
+
+    def __init__(self, lb: LoadBalancerOptimizer):
+        self.lb = lb
+
+    def fire(self, event: str, value: Any):
+        if event == function_replica_add:
+            replica: FunctionReplica = value['response']
+            if replica.state == FunctionReplicaState.RUNNING:
+                self.lb.add_replica(replica)
+        if event == function_replica_delete:
+            replica_id = value['response']
+            self.lb.remove_replica(replica_id)
+        if event == function_replica_scale_up:
+            replicas: List[FunctionReplica] = value['response']
+            replicas = [r for r in replicas  if r.state == FunctionReplicaState.RUNNING]
+            self.lb.add_replicas(replicas)
+        if event == function_replica_scale_down:
+            replicas = value['response']
+            self.lb.remove_replicas(replicas)
+        if event == function_replica_state_change:
+            state = value['new']
+            if state == FunctionReplicaState.RUNNING:
+                self.lb.add_replica(value['replica'])
+
+class LocalizedLoadBalancerOptimizer(LoadBalancerOptimizer):
 
     def __init__(self, context: PlatformContext, cluster: str):
         self.context = context
         self.cluster = cluster
+        self.observer = LoadBalancerObserver(self)
 
     def get_functions(self) -> List[FunctionDeployment]:
         deployment_service = self.context.deployment_service

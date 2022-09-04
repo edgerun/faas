@@ -1,7 +1,10 @@
 import logging
 from typing import Dict, List, Optional, TypeVar, Callable, Union
 
+from faas.util.constant import function_replica_delete, function_replica_add, function_replica_scale_up, \
+    function_replica_scale_down, function_replica_state_change
 from faas.util.rwlock import ReadWriteLock
+from ...observer.api import Observer
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +30,7 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
         self.replica_factory = replica_factory
         self._replicas: Dict[str, I] = {}
         self.rw_lock = ReadWriteLock()
+        self.observers: List[Observer] = []
 
     def get_function_replicas(self) -> List[I]:
         with self.rw_lock.lock.gen_rlock():
@@ -130,6 +134,12 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
         logger.info(f"Shutdown replica with ID: {replica_id}")
         with self.rw_lock.lock.gen_wlock():
             self._delete_function_replica(replica_id)
+        for observer in self.observers:
+            payload = {
+                'request': replica_id,
+                'response': replica_id
+            }
+            observer.fire(function_replica_delete, payload)
 
     def _delete_function_replica(self, replica_id: str):
         try:
@@ -141,8 +151,14 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
         logger.info(f"Add replica with ID: {replica.replica_id}")
         with self.rw_lock.lock.gen_wlock():
             self._add_function_replica(replica)
+        for observer in self.observers:
+            payload = {
+                'request': replica,
+                'response': replica,
+            }
+            observer.fire(function_replica_add, payload)
 
-    def _add_function_replica(self, replica: I):
+    def _add_function_replica(self, replica: I) -> I:
         stored_replica = self._replicas.get(replica.replica_id, None)
         if stored_replica is not None:
             if stored_replica.state == FunctionReplicaState.PENDING or stored_replica.state == FunctionReplicaState.RUNNING:
@@ -152,6 +168,7 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
         else:
             logger.info(f"Create replica: {replica}")
             self._replicas[replica.replica_id] = replica
+        return replica
 
     def matches_labels(self, labels, to_match):
         for label in labels:
@@ -171,10 +188,22 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                 removed_replicas: List[I] = replicas[all_replicas - remove:]
                 for removed in removed_replicas:
                     self._delete_function_replica(removed.replica_id)
+                payload = {
+                    'request': remove,
+                    'response': removed_replicas
+                }
+                for observer in self.observers:
+                    observer.fire(function_replica_scale_down, payload)
                 return removed_replicas
             elif type(remove) is List[I]:
                 for replica in remove:
                     self._delete_function_replica(replica.replica_id)
+                payload = {
+                    'request': remove,
+                    'response': remove
+                }
+                for observer in self.observers:
+                    observer.fire(function_replica_scale_down, payload)
                 return remove
             else:
                 raise ValueError(f'Unknown type {type(remove)} for remove argument')
@@ -190,10 +219,39 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                     replica = self.replica_factory.create_replica({}, fn.deployment_ranking.get_first(), fn)
                     replicas.append(replica)
                     self._add_function_replica(replica)
+                payload = {
+                    'request': add,
+                    'response': replicas
+                }
+                for observer in self.observers:
+                    observer.fire(function_replica_scale_up, payload)
                 return replicas
             elif type(add) is List[I]:
                 for replica in add:
                     self._add_function_replica(replica)
+                payload = {
+                    'request': add,
+                    'response': add
+                }
+                for observer in self.observers:
+                    observer.fire(function_replica_scale_up, payload)
                 return add
             else:
                 raise ValueError(f'Unknown type {type(add)} for add argument')
+
+    def register(self, observer: Observer):
+        self.observers.append(observer)
+        for replica in self.get_function_replicas():
+            observer.fire(function_replica_add, {'request': replica, 'response': replica})
+
+    def set_state(self, replica: FunctionReplica, state: FunctionReplicaState):
+        old_state = replica.state
+        with self.rw_lock.lock.gen_wlock():
+            replica.state = state
+        payload = {
+            'replica': replica,
+            'old': old_state,
+            'new': state
+        }
+        for observer in self.observers:
+            observer.fire(function_replica_state_change, payload)
