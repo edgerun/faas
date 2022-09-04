@@ -40,7 +40,7 @@ class InMemoryNodeService(NodeService[I]):
         with self.rwlock.lock.gen_rlock():
             collected = []
             for node in self.nodes:
-                if node.zone == zone:
+                if node.cluster == zone:
                     collected.append(node)
             return collected
 
