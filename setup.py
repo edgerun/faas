@@ -13,7 +13,7 @@ with open("requirements.txt", "r") as fh:
 
 setuptools.setup(
     name="edgerun-faas",
-    version="0.0.1.dev3",
+    version="0.0.1.dev4",
     author="Philipp Raith, Thomas Rausch",
     author_email="p.raith@dsg.tuwien.ac.at, t.rausch@dsg.tuwien.ac.at",
     description="Edgerun FaaS",
