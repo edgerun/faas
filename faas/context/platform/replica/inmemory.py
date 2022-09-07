@@ -179,7 +179,7 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
 
     def scale_down(self, function_name: str, remove: Union[int, List[I]]) -> List[I]:
         with self.rw_lock.lock.gen_wlock():
-            if self._replicas.get(function_name, None) is None:
+            if self.deployment_service.get_by_name(function_name) is None:
                 raise ValueError(f'FunctionDeployment {function_name} does not exist.')
             if type(remove) is int:
                 replicas = self._replicas[function_name]
@@ -210,13 +210,14 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
 
     def scale_up(self, function_name: str, add: Union[int, List[I]]) -> List[I]:
         with self.rw_lock.lock.gen_wlock():
-            if self._replicas.get(function_name, None) is None:
+            if self.deployment_service.get_by_name(function_name) is None:
                 raise ValueError(f'FunctionDeployment {function_name} does not exist.')
             if type(add) is int:
                 replicas = []
                 fn = self.deployment_service.get_by_name(function_name)
                 for i in range(add):
-                    replica = self.replica_factory.create_replica({}, fn.deployment_ranking.get_first(), fn)
+                    container = fn.deployment_ranking.get_first()
+                    replica = self.replica_factory.create_replica(container.labels, container, fn)
                     replicas.append(replica)
                     self._add_function_replica(replica)
                 payload = {
