@@ -4,7 +4,8 @@ from faas.context import PlatformContext
 from faas.context.observer.api import Observer
 from faas.system import FunctionDeployment, FunctionReplica, FunctionReplicaState
 from faas.util.constant import function_label, api_gateway_type_label, zone_label, function_replica_add, \
-    function_replica_delete, function_replica_scale_up, function_replica_scale_down, function_replica_state_change
+    function_replica_scale_up, function_replica_scale_down, function_replica_state_change, \
+    function_replica_shutdown
 
 
 class LoadBalancerOptimizer:
@@ -51,7 +52,7 @@ class LoadBalancerObserver(Observer):
             replica: FunctionReplica = value['response']
             if replica.state == FunctionReplicaState.RUNNING:
                 self.lb.add_replica(replica)
-        if event == function_replica_delete:
+        if event == function_replica_shutdown:
             replica = value['response']
             self.lb.remove_replica(replica)
         if event == function_replica_scale_up:
