@@ -2,7 +2,7 @@ import logging
 from typing import Dict, List, Optional, TypeVar, Callable, Union
 
 from faas.util.constant import function_replica_delete, function_replica_add, function_replica_scale_up, \
-    function_replica_scale_down, function_replica_state_change
+    function_replica_scale_down, function_replica_state_change, function_replica_shutdown
 from faas.util.rwlock import ReadWriteLock
 from ...observer.api import Observer
 
@@ -123,6 +123,13 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
         logger.info(f"Shutdown replica with ID: {replica_id}")
         with self.rw_lock.lock.gen_wlock():
             self._shutdown_function_replica(replica_id)
+        replica = self._replicas[replica_id]
+        for observer in self.observers:
+            payload = {
+                'request': replica,
+                'response': replica
+            }
+            observer.fire(function_replica_shutdown, payload)
 
     def _shutdown_function_replica(self, replica_id: str):
         try:
