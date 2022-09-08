@@ -1,5 +1,5 @@
 import abc
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Callable, List
 
 import pandas as pd
 
@@ -51,6 +51,20 @@ class TraceService(abc.ABC, Generic[I]):
             'origin_zone'
             'dest_zone'
             'client
+
+        :param function: the function to fetch functions calls from
+        :param start: float
+        :param end: float
+        :param zone: optional, includes only traces that were processed in the given zone (i.e., the executing node was in the zone)
+        :param response_status: optional, if None returns all responses otherwise checks for status code
+        :return: DataFrame containing the traces
+        """
+        ...
+
+    def get_values_for_function(self, function: str, start: float, end: float, access: Callable[['ResponseRepresentation'], float], zone: str = None,
+                                response_status: int = None):
+        """
+        Returns all values from traces that were processed for the given deployment.
 
         :param function: the function to fetch functions calls from
         :param start: float

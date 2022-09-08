@@ -45,13 +45,16 @@ class PointWindow(Generic[S]):
         # if first_ts <= diff:
         #     self._cleanup(diff)
 
-    def _cleanup(self, stop: float):
+    def purge(self, stop: float):
         index = 0
         for i, window in enumerate(self._content):
             if window.ts >= stop:
                 index = i
                 break
+        purged = self._content[:index]
         self._content = self._content[index + 1:]
+        return purged
+
 
     def size(self) -> int:
         return len(self._content)
