@@ -134,10 +134,11 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
         logger.info(f"Shutdown replica with ID: {replica_id}")
         with self.rw_lock.lock.gen_wlock():
             self._delete_function_replica(replica_id)
+            replica = self._replicas[replica_id]
         for observer in self.observers:
             payload = {
-                'request': replica_id,
-                'response': replica_id
+                'request': replica,
+                'response': replica
             }
             observer.fire(function_replica_delete, payload)
 
@@ -195,7 +196,7 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                 for observer in self.observers:
                     observer.fire(function_replica_scale_down, payload)
                 return removed_replicas
-            elif type(remove) is List[I]:
+            elif type(remove) is list:
                 for replica in remove:
                     self._delete_function_replica(replica.replica_id)
                 payload = {

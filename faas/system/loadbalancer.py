@@ -52,8 +52,8 @@ class LoadBalancerObserver(Observer):
             if replica.state == FunctionReplicaState.RUNNING:
                 self.lb.add_replica(replica)
         if event == function_replica_delete:
-            replica_id = value['response']
-            self.lb.remove_replica(replica_id)
+            replica = value['response']
+            self.lb.remove_replica(replica)
         if event == function_replica_scale_up:
             replicas: List[FunctionReplica] = value['response']
             replicas = [r for r in replicas  if r.state == FunctionReplicaState.RUNNING]
