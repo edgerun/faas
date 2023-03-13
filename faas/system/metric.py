@@ -42,7 +42,7 @@ class NullLogger(MetricsLogger):
     Null logger does nothing.
     """
 
-    def log(self, name, value, time=None, **tags):
+    def log(self, metric, value, time=None, **tags):
         pass
 
 
