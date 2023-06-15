@@ -19,3 +19,7 @@ class TelemetryService(abc.ABC):
     def get_node_cpu(self, node: str, start: float = None, end: float = None) -> Optional[
         pd.DataFrame]:
         raise NotImplementedError()
+
+    def get_node_ram(self, node: str, start: float = None, end: float = None) -> Optional[
+        pd.DataFrame]:
+        raise NotImplementedError()

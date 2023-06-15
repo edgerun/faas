@@ -101,7 +101,7 @@ class LoggingLogger(RuntimeLogger):
 
     def _store_record(self, record: Record):
         super()._store_record(record)
-        self.logger(record.__dict__)
+        self.logger(record._asdict())
 
 
 class Metrics:

@@ -118,7 +118,7 @@ class FunctionContainer:
     def get_resource_requirements(self):
         return self.resource_config.get_resource_requirements()
 
-
+@dataclass
 class FunctionNode:
     name: str
     arch: str
@@ -127,6 +127,7 @@ class FunctionNode:
     netspeed: int
     labels: Dict[str, str]
     allocatable: Dict[str, str]
+    zone: str
     cluster: Optional[str]
     state: NodeState
 
