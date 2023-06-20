@@ -127,7 +127,6 @@ class FunctionNode:
     netspeed: int
     labels: Dict[str, str]
     allocatable: Dict[str, str]
-    zone: str
     cluster: Optional[str]
     state: NodeState
 
