@@ -73,7 +73,6 @@ class LocalizedLoadBalancerOptimizer(LoadBalancerOptimizer):
         self.context = context
         self.cluster = cluster
         self.observer = LoadBalancerObserver(self)
-        context.replica_service.register(self.observer)
 
     def get_functions(self) -> List[FunctionDeployment]:
         deployment_service = self.context.deployment_service
