@@ -278,7 +278,7 @@ class FunctionRequest:
         self.headers = headers
 
     def __str__(self) -> str:
-        return 'FunctionRequest(%d, %s, %s)' % (self.request_id, self.name, self.size)
+        return 'FunctionRequest(%s, %s, %s)' % (self.request_id, self.name, self.size)
 
     def __repr__(self):
         return self.__str__()

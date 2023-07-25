@@ -52,20 +52,25 @@ class LoadBalancerObserver(Observer):
             replica: FunctionReplica = value['response']
             if replica.state == FunctionReplicaState.RUNNING:
                 self.lb.add_replica(replica)
+                self.lb.update()
         if event == function_replica_shutdown:
             replica = value['response']
             self.lb.remove_replica(replica)
+            self.lb.update()
         if event == function_replica_scale_up:
             replicas: List[FunctionReplica] = value['response']
             replicas = [r for r in replicas  if r.state == FunctionReplicaState.RUNNING]
             self.lb.add_replicas(replicas)
+            self.lb.update()
         if event == function_replica_scale_down:
             replicas = value['response']
             self.lb.remove_replicas(replicas)
+            self.lb.update()
         if event == function_replica_state_change:
             state = value['new']
             if state == FunctionReplicaState.RUNNING:
                 self.lb.add_replica(value['replica'])
+                self.lb.update()
 
 class LocalizedLoadBalancerOptimizer(LoadBalancerOptimizer):
 

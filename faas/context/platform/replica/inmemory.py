@@ -40,7 +40,7 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
     def find_by_predicate(self, predicate: Callable[[I], bool], running: bool = True,
                           state: FunctionReplicaState = None) -> \
             List[I]:
-        found = None
+        found = []
         with self.rw_lock.lock.gen_rlock():
             replicas = self.get_function_replicas()
             for replica in replicas:
@@ -49,8 +49,8 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                 if state is not None and replica.state != state:
                     continue
                 if predicate(replica):
-                    found = replica
-                    break
+                    found.append(replica)
+
             return found
 
     def get_function_replicas_of_deployment(self, fn_deployment_name, running: bool = True,

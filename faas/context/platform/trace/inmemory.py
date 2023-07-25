@@ -95,6 +95,7 @@ class InMemoryTraceService(TraceService[I]):
         return df
 
     def add_trace(self, response: I):
+
         with self.locks[response.node.name].lock.gen_wlock():
             node = response.node.name
             window = self.requests_per_node.get(node, None)
@@ -116,8 +117,8 @@ class InMemoryTraceService(TraceService[I]):
             with self.locks[node_name].lock.gen_rlock():
                 node_requests = self.requests_per_node.get(node_name)
                 if node_requests is None or node_requests.size() == 0:
+                    # logger.info(f'No requests for node {node_name}')
                     continue
-
                 for req in node_requests.value():
                     if req.val.name == function_name:
                         parsed = self.parser(req.val)
@@ -145,21 +146,21 @@ class InMemoryTraceService(TraceService[I]):
                                       response_status: int = None):
         self.purge()
         df = self.get_traces_for_function(function, start, end, zone, response_status)
-        df = df[df['function_image'] == function_image]
+        if len(df) > 0:
+            df = df[df['function_image'] == function_image]
         return df
 
     def get_values_for_function(self, function: str, start: float, end: float,
                                 access: Callable[['ResponseRepresentation'], float], zone: str = None,
                                 response_status: int = None):
+
+        self.purge()
         if zone is not None:
             nodes = self.node_service.find_nodes_in_zone(zone)
         else:
             nodes = self.node_service.get_nodes()
         data = []
         for node in nodes:
-            if zone is not None:
-                if node.cluster != zone:
-                    continue
             node_name = node.name
             with self.locks[node_name].lock.gen_rlock():
                 node_requests = self.requests_per_node.get(node_name)

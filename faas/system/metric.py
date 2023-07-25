@@ -182,7 +182,8 @@ class Metrics:
         node_name = "None"
         if replica.node is not None:
             node_name = replica.node.name
-        self.log('replica_deployment', event, function_name=replica.function.name, node_name=node_name,
+
+        self.log('replica_deployment', event.value, function_name=replica.function.name, node_name=node_name,
                  replica_id=replica.replica_id, **kwargs)
 
     def log_replica_schedule_event(self, replica: FunctionReplica, event: ScheduleEvent, **kwargs):
