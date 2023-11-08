@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, TypeVar, Callable, Optional
@@ -89,6 +90,7 @@ class InMemoryTraceService(TraceService[I]):
         df = df[df['ts'] >= start]
         df = df[df['ts'] <= end]
         logger.info(f'After filtering {len(df)} traces left for api gateway {node_name}')
+
         if response_status is not None:
             df = df[df['status'] == response_status]
             logger.info(f'After filtering out non status: {len(df)}')
@@ -132,13 +134,13 @@ class InMemoryTraceService(TraceService[I]):
         df = df.sort_values(by='ts')
         df.index = pd.DatetimeIndex(pd.to_datetime(df['ts'], unit='s'))
 
-        logger.info(f'Before filtering {len(df)} traces for function {function_name}')
+        logger.debug(f'Before filtering {len(df)} traces for function {function_name}')
         df = df[df['ts'] >= start]
         df = df[df['ts'] <= end]
-        logger.info(f'After filtering {len(df)} traces left for function {function_name}')
+        logger.debug(f'After filtering {len(df)} traces left for function {function_name}')
         if response_status is not None:
             df = df[df['status'] == response_status]
-            logger.info(f'AFter filtering out non status: {len(df)}')
+            logger.debug(f'AFter filtering out non status: {len(df)}')
         return df.reset_index(drop=True)
 
     def get_traces_for_function_image(self, function: str, function_image: str, start: float, end: float,
@@ -177,4 +179,30 @@ class InMemoryTraceService(TraceService[I]):
 
         return data
 
+    def get_values_for_function_by_sent(self, function: str, start: float, end: float,
+                                access: Callable[['ResponseRepresentation'], float], zone: str = None,
+                                response_status: int = None):
+
+        self.purge()
+        if zone is not None:
+            nodes = self.node_service.find_nodes_in_zone(zone)
+        else:
+            nodes = self.node_service.get_nodes()
+        data = []
+        for node in nodes:
+            node_name = node.name
+            with self.locks[node_name].lock.gen_rlock():
+                node_requests = self.requests_per_node.get(node_name)
+                if node_requests is None or node_requests.size() == 0:
+                    continue
+
+                for req in node_requests.value():
+                    if req.val.name == function:
+                        parsed = self.parser(req.val)
+                        if parsed is not None:
+                            if response_status is None or parsed.status == response_status:
+                                if parsed.sent >= start and parsed.sent <= end:
+                                    data.append(access(parsed))
+
+        return data
 

@@ -168,13 +168,16 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
 
     def _add_function_replica(self, replica: I) -> I:
         stored_replica = self._replicas.get(replica.replica_id, None)
+        # print(f'stored_replica {stored_replica}')
         if stored_replica is not None:
-            if stored_replica.state == FunctionReplicaState.PENDING or stored_replica.state == FunctionReplicaState.RUNNING:
-                # only update pod in case it is pending or running, prevents from updating a not running to running pod
-                logger.info(f"Update replica: {replica}")
-                self._replicas[replica.replica_id] = replica
+            # if stored_replica.state == FunctionReplicaState.CONCEIVED or stored_replica.state == FunctionReplicaState.PENDING or stored_replica.state == FunctionReplicaState.RUNNING:
+            # only update pod in case it is pending or running, prevents from updating a not running to running pod
+            logger.info(f"Update replica: {replica}")
+            logger.info(f'updated new replica state {replica.state}')
+            self._replicas[replica.replica_id] = replica
         else:
             logger.info(f"Create replica: {replica}")
+            # print(f'added new replica {replica}')
             self._replicas[replica.replica_id] = replica
         return replica
 
@@ -186,11 +189,13 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
         return True
 
     def scale_down(self, function_name: str, remove: Union[int, List[I]]) -> List[I]:
+
+        if self.deployment_service.get_by_name(function_name) is None:
+            raise ValueError(f'FunctionDeployment {function_name} does not exist.')
+        replicas = self.get_function_replicas_of_deployment(function_name)
         with self.rw_lock.lock.gen_wlock():
-            if self.deployment_service.get_by_name(function_name) is None:
-                raise ValueError(f'FunctionDeployment {function_name} does not exist.')
+
             if type(remove) is int:
-                replicas = self._replicas[function_name]
                 all_replicas = len(replicas)
                 # just choose the last ones that were added
                 removed_replicas: List[I] = replicas[all_replicas - remove:]
@@ -235,8 +240,10 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                 for observer in self.observers:
                     observer.fire(function_replica_scale_up, payload)
                 return replicas
-            elif type(add) is List[I]:
+            elif type(add) is List[I] or type(add) is list:
+                # print(f'list type {type(add)}')
                 for replica in add:
+                    # print(f'here my boy {replica.state}')
                     self._add_function_replica(replica)
                 payload = {
                     'request': add,

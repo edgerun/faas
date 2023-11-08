@@ -33,7 +33,16 @@ class GlobalLoadBalancerOptimizer(LoadBalancerOptimizer):
 
     def get_running_replicas(self, function: str) -> List[FunctionReplica]:
         replica_service = self.context.replica_service
-        return replica_service.get_function_replicas_of_deployment(function, running=True)
+        replicas = replica_service.get_function_replicas_of_deployment(function, running=True)
+        print(f'Amount of running replicas found {len(replicas)}')
+        for replica in replicas:
+            print(f'Found in zone {replica._labels}')
+        return replicas
+        # replicas = []
+        # for zone in ['zone-a', 'zone-b', 'zone-c']:
+        #     replicas.extend(self.context.replica_service.find_function_replicas_with_labels(labels={
+        #     function_label: function}, node_labels={zone_label: zone}, running=True))
+        # return replicas
 
     def get_functions(self) -> List[FunctionDeployment]:
         deployment_service = self.context.deployment_service
@@ -53,7 +62,7 @@ class LoadBalancerObserver(Observer):
             if replica.state == FunctionReplicaState.RUNNING:
                 self.lb.add_replica(replica)
                 self.lb.update()
-        if event == function_replica_shutdown:
+        if event == function_replica_shutdown or event == function_replica_delete:
             replica = value['response']
             self.lb.remove_replica(replica)
             self.lb.update()
