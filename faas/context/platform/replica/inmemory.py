@@ -222,17 +222,17 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                 raise ValueError(f'Unknown type {type(remove)} for remove argument')
 
     def scale_up(self, function_name: str, add: Union[int, List[I]]) -> List[I]:
-        with self.rw_lock.lock.gen_wlock():
             if self.deployment_service.get_by_name(function_name) is None:
                 raise ValueError(f'FunctionDeployment {function_name} does not exist.')
             if type(add) is int:
                 replicas = []
                 fn = self.deployment_service.get_by_name(function_name)
-                for i in range(add):
-                    container = fn.deployment_ranking.get_first()
-                    replica = self.replica_factory.create_replica(container.labels, container, fn)
-                    replicas.append(replica)
-                    self._add_function_replica(replica)
+                with self.rw_lock.lock.gen_wlock():
+                    for i in range(add):
+                        container = fn.deployment_ranking.get_first()
+                        replica = self.replica_factory.create_replica(container.labels, container, fn)
+                        replicas.append(replica)
+                        self._add_function_replica(replica)
                 payload = {
                     'request': add,
                     'response': replicas
@@ -241,10 +241,10 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                     observer.fire(function_replica_scale_up, payload)
                 return replicas
             elif type(add) is List[I] or type(add) is list:
-                # print(f'list type {type(add)}')
-                for replica in add:
-                    # print(f'here my boy {replica.state}')
-                    self._add_function_replica(replica)
+                with self.rw_lock.lock.gen_wlock():
+                    for replica in add:
+                            # print(f'here my boy {replica.state}')
+                            self._add_function_replica(replica)
                 payload = {
                     'request': add,
                     'response': add
