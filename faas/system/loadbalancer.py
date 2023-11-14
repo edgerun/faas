@@ -5,7 +5,7 @@ from faas.context.observer.api import Observer
 from faas.system import FunctionDeployment, FunctionReplica, FunctionReplicaState
 from faas.util.constant import function_label, api_gateway_type_label, zone_label, function_replica_add, \
     function_replica_scale_up, function_replica_scale_down, function_replica_state_change, \
-    function_replica_shutdown
+    function_replica_shutdown, function_replica_delete
 
 
 class LoadBalancerOptimizer:
