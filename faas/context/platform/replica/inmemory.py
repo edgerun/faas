@@ -114,9 +114,12 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
             return found
 
     def get_function_replicas_on_node(self, node_name: str) -> List[I]:
-        logger.debug(f'find containers on ode {node_name}')
+        logger.debug(f'find containers on node {node_name}')
         with self.rw_lock.lock.gen_rlock():
-            replicas = list(filter(lambda r: r.node.name == node_name, self._replicas.values()))
+            r: FunctionReplica
+
+            replicas = list(filter(lambda r: r.state == FunctionReplicaState.RUNNING and r.node.name == node_name,
+                                   self._replicas.values()))
             return replicas
 
     def shutdown_function_replica(self, replica_id: str):
