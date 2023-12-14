@@ -81,3 +81,7 @@ class TraceService(abc.ABC, Generic[I]):
 
     def add_trace(self, response: I):
         ...
+
+    def get_values_for_function_by_sent(self, function: str, start: float, end: float,
+                                        access: Callable[['ResponseRepresentation'], float], zone: str = None,
+                                        response_status: int = None): ...
