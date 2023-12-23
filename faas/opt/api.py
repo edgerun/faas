@@ -1,3 +1,6 @@
+from typing import Dict
+
+
 class Optimizer:
     """
     This class represents the base class optimization implementations for different resource
@@ -17,3 +20,5 @@ class Optimizer:
     def run(self): ...
 
     def stop(self): ...
+
+    def update(self, params: Dict): ...
