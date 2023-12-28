@@ -246,7 +246,7 @@ class FunctionReplica:
         labels = self.function.labels.copy()
         labels.update(self.container.labels)
         labels.update(self._labels)
-        return self._labels
+        return labels
 
 
 # TODO add functionrequest to trace when started
