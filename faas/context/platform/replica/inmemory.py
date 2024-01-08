@@ -197,7 +197,6 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
             raise ValueError(f'FunctionDeployment {function_name} does not exist.')
         replicas = self.get_function_replicas_of_deployment(function_name)
         with self.rw_lock.lock.gen_wlock():
-
             if type(remove) is int:
                 all_replicas = len(replicas)
                 # just choose the last ones that were added
@@ -208,9 +207,6 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                     'request': remove,
                     'response': removed_replicas
                 }
-                for observer in self.observers:
-                    observer.fire(function_replica_scale_down, payload)
-                return removed_replicas
             elif type(remove) is list:
                 for replica in remove:
                     self._delete_function_replica(replica.replica_id)
@@ -218,11 +214,11 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                     'request': remove,
                     'response': remove
                 }
-                for observer in self.observers:
-                    observer.fire(function_replica_scale_down, payload)
-                return remove
             else:
                 raise ValueError(f'Unknown type {type(remove)} for remove argument')
+        for observer in self.observers:
+            observer.fire(function_replica_scale_down, payload)
+        return payload['response']
 
     def scale_up(self, function_name: str, add: Union[int, List[I]]) -> List[I]:
             if self.deployment_service.get_by_name(function_name) is None:
