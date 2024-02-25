@@ -113,13 +113,16 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                     break
             return found
 
-    def get_function_replicas_on_node(self, node_name: str) -> List[I]:
+    def get_function_replicas_on_node(self, node_name: str,
+                                      state: Optional[FunctionReplicaState] = FunctionReplicaState.RUNNING) -> List[I]:
         logger.debug(f'find containers on node {node_name}')
         with self.rw_lock.lock.gen_rlock():
             r: FunctionReplica
-
-            replicas = list(filter(lambda r: r.state == FunctionReplicaState.RUNNING and r.node.name == node_name,
-                                   self._replicas.values()))
+            if state is None:
+                replicas = list(filter(lambda r: r.node.name == node_name, self._replicas.values()))
+            else:
+                replicas = list(filter(lambda r: r.state == state and r.node.name == node_name,
+                                       self._replicas.values()))
             return replicas
 
     def shutdown_function_replica(self, replica_id: str):
@@ -221,38 +224,38 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
         return payload['response']
 
     def scale_up(self, function_name: str, add: Union[int, List[I]]) -> List[I]:
-            if self.deployment_service.get_by_name(function_name) is None:
-                raise ValueError(f'FunctionDeployment {function_name} does not exist.')
-            if type(add) is int:
-                replicas = []
-                fn = self.deployment_service.get_by_name(function_name)
-                with self.rw_lock.lock.gen_wlock():
-                    for i in range(add):
-                        container = fn.deployment_ranking.get_first()
-                        replica = self.replica_factory.create_replica(container.labels, container, fn)
-                        replicas.append(replica)
-                        self._add_function_replica(replica)
-                payload = {
-                    'request': add,
-                    'response': replicas
-                }
-                for observer in self.observers:
-                    observer.fire(function_replica_scale_up, payload)
-                return replicas
-            elif type(add) is List[I] or type(add) is list:
-                with self.rw_lock.lock.gen_wlock():
-                    for replica in add:
-                            # print(f'here my boy {replica.state}')
-                            self._add_function_replica(replica)
-                payload = {
-                    'request': add,
-                    'response': add
-                }
-                for observer in self.observers:
-                    observer.fire(function_replica_scale_up, payload)
-                return add
-            else:
-                raise ValueError(f'Unknown type {type(add)} for add argument')
+        if self.deployment_service.get_by_name(function_name) is None:
+            raise ValueError(f'FunctionDeployment {function_name} does not exist.')
+        if type(add) is int:
+            replicas = []
+            fn = self.deployment_service.get_by_name(function_name)
+            with self.rw_lock.lock.gen_wlock():
+                for i in range(add):
+                    container = fn.deployment_ranking.get_first()
+                    replica = self.replica_factory.create_replica(container.labels, container, fn)
+                    replicas.append(replica)
+                    self._add_function_replica(replica)
+            payload = {
+                'request': add,
+                'response': replicas
+            }
+            for observer in self.observers:
+                observer.fire(function_replica_scale_up, payload)
+            return replicas
+        elif type(add) is List[I] or type(add) is list:
+            with self.rw_lock.lock.gen_wlock():
+                for replica in add:
+                    # print(f'here my boy {replica.state}')
+                    self._add_function_replica(replica)
+            payload = {
+                'request': add,
+                'response': add
+            }
+            for observer in self.observers:
+                observer.fire(function_replica_scale_up, payload)
+            return add
+        else:
+            raise ValueError(f'Unknown type {type(add)} for add argument')
 
     def register(self, observer: Observer):
         self.observers.append(observer)

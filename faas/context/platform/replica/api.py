@@ -34,7 +34,8 @@ class FunctionReplicaService(abc.ABC, Generic[I]):
     def get_function_replica_by_id(self, replica_id: str) -> Optional[I]:
         raise NotImplementedError()
 
-    def get_function_replicas_on_node(self, node_name: str) -> List[I]:
+    def get_function_replicas_on_node(self, node_name: str,
+                                      state: Optional[FunctionReplicaState] = FunctionReplicaState.RUNNING) -> List[I]:
         raise NotImplementedError()
 
     def shutdown_function_replica(self, replica_id: str):
