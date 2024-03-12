@@ -86,7 +86,10 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
                 if labels is not None:
                     pod_labels = replica.labels
                     matches = self.matches_labels(labels, pod_labels)
-                node = self.node_service.find(replica.node.name)
+                try:
+                    node = self.node_service.find(replica.node.name)
+                except AttributeError:
+                    pass
                 if not matches or node is None:
                     continue
                 if node_labels is not None:
@@ -119,7 +122,7 @@ class InMemoryFunctionReplicaService(FunctionReplicaService[I]):
         with self.rw_lock.lock.gen_rlock():
             r: FunctionReplica
             if state is None:
-                replicas = list(filter(lambda r: r.node.name == node_name, self._replicas.values()))
+                replicas = list(filter(lambda r: r.node is not None and r.node.name == node_name, self._replicas.values()))
             else:
                 replicas = list(filter(lambda r: r.state == state and r.node.name == node_name,
                                        self._replicas.values()))
