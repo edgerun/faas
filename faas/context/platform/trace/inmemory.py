@@ -61,7 +61,7 @@ class InMemoryTraceService(TraceService[I]):
             self.last_purge = now
 
     def get_traces_api_gateway(self, node_name: str, start: float, end: float,
-                               response_status: int = None) -> pd.DataFrame:
+                               response_status: int = None) -> Optional[pd.DataFrame]:
         self.purge()
         gateway = self.node_service.find(node_name)
         if gateway is None:
@@ -83,6 +83,8 @@ class InMemoryTraceService(TraceService[I]):
                         if parsed is not None:
                             for key, value in parsed.__dict__.items():
                                 requests[key].append(value)
+        if len(requests) == 0:
+            return None
 
         df = pd.DataFrame(data=requests).sort_values(by='ts')
         df.index = pd.DatetimeIndex(pd.to_datetime(df['ts'], unit='s'))
